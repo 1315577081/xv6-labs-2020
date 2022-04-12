@@ -118,14 +118,19 @@ sys_info(void)
     struct sysinfo si;
     struct proc *p;
 
-    if(argaddr(0, &sysinfo_addr) < 0)
+    if(argaddr(0, &sysinfo_addr) < 0) {
+        printf("args problem\n");
         return -1;
+    }
 
-    
+    memset(&si, 0, sizeof(struct sysinfo));
+    kgetfree(&si);
+    getunusedproc(&si);
 
     p = myproc();
-    if(copyout(p->pagetable, sysinfo_addr, (char *)&si, sizeof(struct sysinfo)) < 0)
+    if(copyout(p->pagetable, sysinfo_addr, (char *)&si, sizeof(si)) < 0) {
         return -1;
+    }
     return 0;
 }
 

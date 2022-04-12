@@ -7,7 +7,7 @@
 void
 sinfo(struct sysinfo *info) {
   if (sysinfo(info) < 0) {
-    printf("FAIL: sysinfo failed");
+    printf("FAIL: 10 sysinfo failed");
     exit(1);
   }
 }
@@ -107,7 +107,7 @@ void testproc() {
   if(pid == 0){
     sinfo(&info);
     if(info.nproc != nproc+1) {
-      printf("sysinfotest: FAIL nproc is %d instead of %d\n", info.nproc, nproc+1);
+      printf("sysinfotest: child FAIL nproc is %d instead of %d\n", info.nproc, nproc+1);
       exit(1);
     }
     exit(0);
