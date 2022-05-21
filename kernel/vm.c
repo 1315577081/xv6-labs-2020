@@ -5,6 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -45,6 +47,47 @@ kvminit()
   // map the trampoline for trap entry/exit to
   // the highest virtual address in the kernel.
   kvmmap(TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+}
+
+pagetable_t
+prockvminit()
+{
+    pagetable_t proc_kernel_pagetable = (pagetable_t) kalloc();
+    memset(proc_kernel_pagetable, 0, PGSIZE);
+
+    //kvmmap(UART0, UART0, PGSIZE, PTE_R | PTE_W);
+    if(mappages(proc_kernel_pagetable, UART0, PGSIZE, UART0, PTE_R | PTE_W) != 0)
+        goto err;
+
+    //kvmmap(VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+    if(mappages(proc_kernel_pagetable, VIRTIO0, PGSIZE, VIRTIO0, PTE_R | PTE_W) != 0)
+        goto err;
+
+    //kvmmap(CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+    if(mappages(proc_kernel_pagetable, CLINT, 0x10000, CLINT, PTE_R | PTE_W) != 0)
+        goto err;
+
+    //kvmmap(PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+    if(mappages(proc_kernel_pagetable, PLIC, 0x400000, PLIC, PTE_R | PTE_W) != 0)
+        goto err;
+
+    //kvmmap(KERNBASE, KERNBASE, (uint64)etext-KERNBASE, PTE_R | PTE_X);
+    if(mappages(proc_kernel_pagetable, KERNBASE, (uint64)etext-KERNBASE, KERNBASE, PTE_R | PTE_X) != 0)
+        goto err;
+
+    //kvmmap((uint64)etext, (uint64)etext, PHYSTOP-(uint64)etext, PTE_R | PTE_W);
+    if(mappages(proc_kernel_pagetable, (uint64)etext, PHYSTOP-(uint64)etext, (uint64)etext, PTE_R | PTE_W) != 0)
+        goto err;
+
+    //kvmmap(TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+    if(mappages(proc_kernel_pagetable, TRAMPOLINE, PGSIZE, (uint64)trampoline, PTE_R | PTE_X) != 0)
+        goto err;
+
+    return proc_kernel_pagetable;
+
+err:
+    panic("prockvminit");
+    return 0;
 }
 
 // Switch h/w page table register to the kernel's page table,
@@ -132,7 +175,7 @@ kvmpa(uint64 va)
   pte_t *pte;
   uint64 pa;
   
-  pte = walk(kernel_pagetable, va, 0);
+  pte = walk(myproc()->proc_kernel_pagetable, va, 0);
   if(pte == 0)
     panic("kvmpa");
   if((*pte & PTE_V) == 0)
