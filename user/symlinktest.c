@@ -91,10 +91,12 @@ testsymlink(void)
     fail("Should not be able to open b after deleting a");
 
   r = symlink("/testsymlink/b", "/testsymlink/a");
+  printf("dsj1");
   if(r < 0)
     fail("symlink a -> b failed");
 
   r = open("/testsymlink/b", O_RDWR);
+  printf("dsj2");
   if(r >= 0)
     fail("Should not be able to open b (cycle b->a->b->..)\n");
   
@@ -112,6 +114,7 @@ testsymlink(void)
   close(fd2);
 
   fd1 = open("/testsymlink/4", O_CREATE | O_RDWR);
+    printf("dsj4");
   if(fd1<0) fail("Failed to create 4\n");
   fd2 = open("/testsymlink/1", O_RDWR);
   if(fd2<0) fail("Failed to open 1\n");
