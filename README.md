@@ -1,5 +1,5 @@
 # xv6-labs-2020
-从别人仓库fork过来的6.s081的源码，不过因为是fork过来的，提交到自己分支上的commit不能显示主页上的贡献小绿点了~~qaq~~  
+从别人仓库fork过来的6.s081的源码，因为是fork过来的，提交的commit不能显示主页上的贡献小绿点了~~qaq~~  
 参考链接：  
 1.视频翻译：https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081  
 2.文档 实验 教程ALL IN ONE：https://xv6.dgs.zone/  
