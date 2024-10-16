@@ -5,7 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-
+#include "fcntl.h"
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -296,6 +296,14 @@ fork(void)
       np->ofile[i] = filedup(p->ofile[i]);
   np->cwd = idup(p->cwd);
 
+  // 复制父进程的VMA
+  for(i = 0; i < MAXVMA ; ++i) {
+    if(p->procvma[i].valid) {
+      memmove(&np->procvma[i], &p->procvma[i], sizeof(p->procvma[i]));
+      filedup(p->procvma[i].f);
+    }
+  }
+
   safestrcpy(np->name, p->name, sizeof(p->name));
 
   pid = np->pid;
@@ -352,7 +360,17 @@ exit(int status)
       p->ofile[fd] = 0;
     }
   }
-
+  // 将进程的已映射区域取消映射
+  for(int i = 0; i < MAXVMA ; ++i) {
+    if(p->procvma[i].valid) {
+      if(p->procvma[i].flags == MAP_SHARED && (p->procvma[i].prot & PROT_WRITE) != 0) {
+        filewrite(p->procvma[i].f, p->procvma[i].addr, p->procvma[i].len);
+      }
+      fileclose(p->procvma[i].f);
+      uvmunmap(p->pagetable, p->procvma[i].addr, p->procvma[i].len / PGSIZE, 1);
+      p->procvma[i].valid = 0;
+    }
+  }
   begin_op();
   iput(p->cwd);
   end_op();
